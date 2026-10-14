@@ -1,0 +1,13 @@
+FAMILIENKÜCHE – Prototyp 1
+
+Dateien: index.html, manifest.webmanifest, sw.js, icon.png, icon-512.png
+
+Auf einem iPhone nutzen:
+1. Die ZIP-Datei in der Dateien-App entpacken.
+2. Für eine richtige Home-Bildschirm-Web-App müssen alle Dateien gemeinsam bei einem HTTPS-fähigen statischen Webhost veröffentlicht werden, z.B. GitHub Pages oder Netlify Drop. Der direkte Aufruf der lokalen index.html aus Dateien ist dafür nicht ausreichend.
+3. Die veröffentlichte HTTPS-URL in Safari öffnen.
+4. Teilen > Zum Home-Bildschirm > Hinzufügen.
+
+Alle Änderungen werden in der ersten Version nur lokal auf dem jeweiligen Gerät gespeichert. Mehrere Familienmitglieder werden NOCH NICHT synchronisiert. In Mehr > Daten sichern kann ein JSON-Backup exportiert/importiert werden.
+
+Es sind Beispielgerichte enthalten. Diese können bearbeitet oder gelöscht werden.
