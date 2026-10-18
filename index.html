@@ -131,14 +131,9 @@ body{background:var(--paper)}
 .fridge-result-text{flex:1 1 auto;min-width:0}
 .match-chip{flex:0 0 auto;white-space:nowrap}
 
-.meal-photo-card .plan-main{display:flex;flex-direction:column;align-items:stretch;gap:12px}
-.meal-photo-card .plan-main>.meal-photo{width:100%;height:auto;aspect-ratio:16/9;border-radius:14px}
-.fridge-result-head{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:9px}
-.fridge-result-head>.meal-photo{grid-column:1/-1;width:100%;aspect-ratio:16/9;border-radius:14px}
-.fridge-result-text{grid-column:1;grid-row:2}
-.match-chip{grid-column:2;grid-row:2;align-self:center}
-.meal-photo-card .plan-content{width:100%}
-.meal-photo-placeholder svg{width:48px;height:48px}
+.meal-photo-card .plan-main{display:flex;gap:13px;align-items:center}
+.meal-photo-card .meal-photo,.fridge-result .meal-photo{width:72px;height:72px;border-radius:12px}
+@media(max-width:360px){.meal-photo-card .meal-photo,.fridge-result .meal-photo{width:60px;height:60px}.fridge-result-head{gap:9px}.match-chip{padding:5px 7px;font-size:11px}}
 
 </style></head><body><div id="app" class="app"></div><div id="modal-root"></div><script>
 const KEY='familienkueche_v1';const baseGroups=['Reis','Nudeln','Kartoffeln','Hülsenfrüchte','Gemüse','Brot & Teig','Sonstiges'];const seasons=['Frühling','Sommer','Herbst','Winter'];const categories=['Obst & Gemüse','Backwaren','Konserven','Kühlware','Tiefkühlprodukte','Zutaten','Snacks','Getränke','Haushalt','Pflegeprodukte','Baumarkt & Garten','Eigene Artikel'];const units=['Stück','g','kg','ml','l','Packung','Becher','Bund','Dose','Flasche'];
