@@ -168,10 +168,12 @@ body{background:var(--paper)}
 .dish-portions{margin-top:19px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.dish-portions+.h3{margin-top:12px}
 
 /* V40 – context-aware completion for product and ingredient names. */
-.autocomplete-field{position:relative;min-width:0}
+.autocomplete-field{position:relative;display:block;min-width:0;width:100%}
 .autocomplete-field>input{width:100%}
-.autocomplete-suffix{position:absolute;right:9px;top:50%;transform:translateY(-50%);padding:5px 8px;border:1px solid #dce7da;border-radius:8px;background:#f6f8f4;color:#818c83;font-size:12px;max-width:43%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;z-index:2}
-.autocomplete-suffix:focus{outline:2px solid #78a888}
+.autocomplete-ghost{position:absolute;top:50%;transform:translateY(-50%);display:flex;align-items:baseline;white-space:pre;overflow:hidden;pointer-events:none;max-width:calc(100% - 24px);line-height:normal;z-index:2}
+.autocomplete-typed{visibility:hidden;flex:none}
+.autocomplete-suffix{appearance:none;-webkit-appearance:none;display:inline;padding:0;margin:0;border:0;background:transparent;color:#9ba59d;font:inherit;line-height:inherit;letter-spacing:inherit;cursor:pointer;pointer-events:auto;text-align:left;white-space:pre;flex:none}
+.autocomplete-suffix:focus-visible{outline:2px solid #78a888;outline-offset:2px;border-radius:2px}
 </style></head><body><div id="app" class="app"></div><div id="modal-root"></div><script>
 const KEY='familienkueche_v1';const baseGroups=['Reis','Nudeln','Kartoffeln','Hülsenfrüchte','Gemüse','Brot & Teig','Sonstiges'];const seasons=['Frühling','Sommer','Herbst','Winter'];const categories=['Obst & Gemüse','Backwaren','Konserven','Kühlware','Tiefkühlprodukte','Zutaten','Snacks','Getränke','Haushalt','Pflegeprodukte','Baumarkt & Garten','Eigene Artikel'];const units=['Stück','g','kg','ml','l','Packung','Becher','Bund','Dose','Flasche'];
 const demo={dishes:[{id:'d1',name:'Gemüselasagne',group:'Nudeln',seasons:[],emoji:'🍝',minutes:50,category:'Hauptgericht',favorite:true,ingredients:[{name:'Zucchini',qty:2,unit:'Stück'},{name:'Karotten',qty:3,unit:'Stück'},{name:'Passierte Tomaten',qty:500,unit:'g'},{name:'Lasagneplatten',qty:250,unit:'g'},{name:'Käse',qty:200,unit:'g'}],recipe:'Gemüse klein schneiden und anbraten. Mit Tomaten köcheln lassen. Mit Lasagneplatten schichten, Käse darübergeben und im Ofen backen.'},{id:'d2',name:'Kartoffelpuffer',group:'Kartoffeln',seasons:[],emoji:'🥔',minutes:35,category:'Hauptgericht',favorite:true,ingredients:[{name:'Kartoffeln',qty:1000,unit:'g'},{name:'Eier',qty:2,unit:'Stück'},{name:'Mehl',qty:60,unit:'g'}],recipe:'Kartoffeln reiben und ausdrücken. Mit Ei und Mehl vermischen. Portionsweise in wenig Öl knusprig ausbacken.'},{id:'d3',name:'Gemüsecurry',group:'Reis',seasons:[],emoji:'🍛',minutes:30,category:'Hauptgericht',favorite:false,ingredients:[{name:'Reis',qty:250,unit:'g'},{name:'Paprika',qty:2,unit:'Stück'},{name:'Zucchini',qty:1,unit:'Stück'},{name:'Kokosmilch',qty:400,unit:'ml'}],recipe:'Reis garen. Gemüse anbraten, Kokosmilch zugeben und abschmecken.'},{id:'d4',name:'Spaghetti mit Tomatensoße',group:'Nudeln',seasons:[],emoji:'🍅',minutes:20,category:'Hauptgericht',favorite:true,ingredients:[{name:'Spaghetti',qty:500,unit:'g'},{name:'Passierte Tomaten',qty:500,unit:'g'},{name:'Zwiebeln',qty:1,unit:'Stück'}],recipe:'Spaghetti kochen. Zwiebeln anschwitzen, Tomaten zugeben, abschmecken und mit den Nudeln servieren.'}],plan:[{id:'p1',dishId:'d1',done:false},{id:'p2',dishId:'d2',done:false},{id:'p3',dishId:'d3',done:false}],templates:[{id:'t1',name:'Milch',qty:2,unit:'l',category:'Kühlware'},{id:'t2',name:'Haferflocken',qty:500,unit:'g',category:'Zutaten'},{id:'t3',name:'Bananen',qty:6,unit:'Stück',category:'Obst & Gemüse'},{id:'t4',name:'Eier',qty:10,unit:'Stück',category:'Kühlware'},{id:'t5',name:'Brot',qty:1,unit:'Stück',category:'Backwaren'}],weekly:null,manual:[],checked:[],history:[],pantry:[],shopOverrides:{},shopExcluded:[],staples:['Salz','Pfeffer','Öl']};
@@ -218,7 +220,7 @@ function refreshShopResults(){const list=totals();const term=nameKey(shopQuery);
 function weeklyContent(rows){return `<div class="card">${rows.map(x=>`<div class="itemrow"><input class="tick" type="checkbox" ${x.enabled?'checked':''} onchange="setWeekly('${x.id}','enabled',this.checked)"><span class="grow product-name-group"><span class="long-product" data-product="${safe(x.name)}" tabindex="0" title="Lange drücken zum Bearbeiten">${safe(x.name)}</span><button type="button" class="product-edit-shortcut" aria-label="${safe(x.name)} bearbeiten" onclick="editProductByName(decodeURIComponent('${encodeURIComponent(x.name)}'),'weekly','${x.id}')">✎</button></span><input aria-label="Menge ${safe(x.name)}" style="width:75px;text-align:center" type="number" min="0" step="any" value="${x.qty}" onchange="setWeekly('${x.id}','qty',this.value)"><span class="quantity" style="width:55px">${safe(x.unit)}</span>${x.weeklyOnly?`<button type="button" class="btn tiny ghost" aria-label="${safe(x.name)} aus Wochenbedarf entfernen" onclick="removeWeeklyExtra('${x.id}')">×</button>`:''}</div>`).join('')||'<p class="muted">Keine passenden Standardprodukte.</p>'}</div>`}
 function refreshWeeklyResults(){document.getElementById('weekly-results').innerHTML=weeklyContent(state.weekly.filter(x=>nameKey(x.name).includes(nameKey(weeklyQuery))))}
 function setAllWeekly(v){ensureWeekly();state.weekly.forEach(x=>{if(nameKey(x.name).includes(nameKey(weeklyQuery)))x.enabled=v});save();draw()}
-function adjustShopAmount(enc,delta){const key=decodeURIComponent(enc),x=totals().find(x=>x.key===key);if(!x)return;const step=(x.unit==='ml'&&x.displayUnit==='l')||(x.unit==='g'&&x.displayUnit==='kg')?1000:1;const next=Math.max(0,Math.round((x.qty+delta*step)*1000)/1000);state.shopOverrides[key]=next;save();draw()}
+function adjustShopAmount(enc,delta){const key=decodeURIComponent(enc),x=totals().find(x=>x.key===key);if(!x)return;const next=Math.max(0,Math.round((x.qty+delta)*1000)/1000);state.shopOverrides[key]=next;save();draw()}
 
 // Long press any product name to edit its supermarket grouping across the app.
 function editProductByName(name,context,entryId){
@@ -333,17 +335,24 @@ function productWordCandidates(){
 function updateAutoComplete(inp){
  const parent=inp.parentElement;
  if(!parent?.classList.contains('autocomplete-field'))return;
- parent.querySelector('.autocomplete-suffix')?.remove();
- const val=inp.value.trim(),prefix=val.toLocaleLowerCase('de');
- if(prefix.length<3||document.activeElement!==inp)return;
- const candidate=productWordCandidates().find(word=>word.toLocaleLowerCase('de').startsWith(prefix)&&word.length>val.length);
+ parent.querySelector('.autocomplete-ghost')?.remove();
+ const val=inp.value, prefix=val.trim().toLocaleLowerCase('de');
+ if(prefix.length<3||document.activeElement!==inp||inp.selectionStart!==val.length)return;
+ const candidate=productWordCandidates().find(word=>word.toLocaleLowerCase('de').startsWith(prefix)&&word.length>val.trim().length);
  if(!candidate)return;
- const btn=document.createElement('button');
- btn.type='button';btn.className='autocomplete-suffix';btn.textContent=candidate.substring(val.length);
- btn.setAttribute('aria-label','Zu '+candidate+' vervollständigen');
- btn.addEventListener('pointerdown',e=>e.preventDefault());
- btn.addEventListener('click',()=>{inp.value=candidate;inp.dispatchEvent(new Event('input',{bubbles:true}));btn.remove();inp.focus()});
- parent.appendChild(btn);
+ const typed=val.trim(),suffix=candidate.slice(typed.length);
+ const style=getComputedStyle(inp);
+ const ghost=document.createElement('span');ghost.className='autocomplete-ghost';
+ ghost.style.left=style.paddingLeft;
+ ghost.style.right=style.paddingRight;
+ ghost.style.font=style.font;
+ ghost.style.letterSpacing=style.letterSpacing;
+ const prefixSpan=document.createElement('span');prefixSpan.className='autocomplete-typed';prefixSpan.textContent=val;
+ const hint=document.createElement('button');hint.type='button';hint.className='autocomplete-suffix';hint.textContent=suffix;
+ hint.setAttribute('aria-label','Zu '+candidate+' vervollständigen');
+ hint.addEventListener('pointerdown',e=>e.preventDefault());
+ hint.addEventListener('click',()=>{inp.value=candidate;inp.dispatchEvent(new Event('input',{bubbles:true}));ghost.remove();inp.focus()});
+ ghost.append(prefixSpan,hint);parent.appendChild(ghost);
 }
 function initProductAutoComplete(root=document){
  const nodes=[...root.querySelectorAll('input[name="name"],input[aria-label="Zutat"],#fridge-add,#staple-add')];
@@ -354,7 +363,7 @@ function initProductAutoComplete(root=document){
   inp.parentNode.insertBefore(wrap,inp);wrap.appendChild(inp);
   inp.addEventListener('input',()=>updateAutoComplete(inp));
   inp.addEventListener('focus',()=>updateAutoComplete(inp));
-  inp.addEventListener('blur',()=>setTimeout(()=>wrap.querySelector('.autocomplete-suffix')?.remove(),160));
+  inp.addEventListener('blur',()=>setTimeout(()=>wrap.querySelector('.autocomplete-ghost')?.remove(),160));
  }
 }
 const productAutoObserver=new MutationObserver(()=>initProductAutoComplete());
