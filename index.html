@@ -174,6 +174,18 @@ body{background:var(--paper)}
 .autocomplete-typed{visibility:hidden;flex:none}
 .autocomplete-suffix{appearance:none;-webkit-appearance:none;display:inline;padding:0;margin:0;border:0;background:transparent;color:#9ba59d;font:inherit;line-height:inherit;letter-spacing:inherit;cursor:pointer;pointer-events:auto;text-align:left;white-space:pre;flex:none}
 .autocomplete-suffix:focus-visible{outline:2px solid #78a888;outline-offset:2px;border-radius:2px}
+
+/* V44: iPhone keyboard, safe-area and touch stability */
+@media (max-width: 680px){
+ input:not([type=checkbox]):not([type=radio]),select,textarea{font-size:16px}
+ .modal{max-height:min(90dvh,calc(var(--fk-vh, 100dvh) - 10px));overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+ .modalback{height:var(--fk-vh,100dvh);top:var(--fk-vtop,0px);bottom:auto}
+ .picker-scroll{overscroll-behavior:contain}
+}
+button,input,select,textarea{touch-action:manipulation}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid #447953;outline-offset:2px}
+.update-notice{position:fixed;z-index:60;bottom:calc(85px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);width:min(92vw,430px);background:#263c30;color:#fff;border-radius:14px;padding:12px 14px;box-shadow:0 8px 30px #17261b44;display:flex;gap:10px;align-items:center;justify-content:space-between;font-size:13px}
+.update-notice button{width:auto;border:1px solid #c5d6ca;background:transparent;color:white;border-radius:9px;font-size:13px;padding:9px}
 </style></head><body><div id="app" class="app"></div><div id="modal-root"></div><script>
 const KEY='familienkueche_v1';const baseGroups=['Reis','Nudeln','Kartoffeln','Hülsenfrüchte','Gemüse','Brot & Teig','Sonstiges'];const seasons=['Frühling','Sommer','Herbst','Winter'];const categories=['Obst & Gemüse','Backwaren','Konserven','Kühlware','Tiefkühlprodukte','Zutaten','Snacks','Getränke','Haushalt','Pflegeprodukte','Baumarkt & Garten','Eigene Artikel'];const units=['Stück','g','kg','ml','l','Packung','Becher','Bund','Dose','Flasche'];
 const demo={dishes:[{id:'d1',name:'Gemüselasagne',group:'Nudeln',seasons:[],emoji:'🍝',minutes:50,category:'Hauptgericht',favorite:true,ingredients:[{name:'Zucchini',qty:2,unit:'Stück'},{name:'Karotten',qty:3,unit:'Stück'},{name:'Passierte Tomaten',qty:500,unit:'g'},{name:'Lasagneplatten',qty:250,unit:'g'},{name:'Käse',qty:200,unit:'g'}],recipe:'Gemüse klein schneiden und anbraten. Mit Tomaten köcheln lassen. Mit Lasagneplatten schichten, Käse darübergeben und im Ofen backen.'},{id:'d2',name:'Kartoffelpuffer',group:'Kartoffeln',seasons:[],emoji:'🥔',minutes:35,category:'Hauptgericht',favorite:true,ingredients:[{name:'Kartoffeln',qty:1000,unit:'g'},{name:'Eier',qty:2,unit:'Stück'},{name:'Mehl',qty:60,unit:'g'}],recipe:'Kartoffeln reiben und ausdrücken. Mit Ei und Mehl vermischen. Portionsweise in wenig Öl knusprig ausbacken.'},{id:'d3',name:'Gemüsecurry',group:'Reis',seasons:[],emoji:'🍛',minutes:30,category:'Hauptgericht',favorite:false,ingredients:[{name:'Reis',qty:250,unit:'g'},{name:'Paprika',qty:2,unit:'Stück'},{name:'Zucchini',qty:1,unit:'Stück'},{name:'Kokosmilch',qty:400,unit:'ml'}],recipe:'Reis garen. Gemüse anbraten, Kokosmilch zugeben und abschmecken.'},{id:'d4',name:'Spaghetti mit Tomatensoße',group:'Nudeln',seasons:[],emoji:'🍅',minutes:20,category:'Hauptgericht',favorite:true,ingredients:[{name:'Spaghetti',qty:500,unit:'g'},{name:'Passierte Tomaten',qty:500,unit:'g'},{name:'Zwiebeln',qty:1,unit:'Stück'}],recipe:'Spaghetti kochen. Zwiebeln anschwitzen, Tomaten zugeben, abschmecken und mit den Nudeln servieren.'}],plan:[{id:'p1',dishId:'d1',done:false},{id:'p2',dishId:'d2',done:false},{id:'p3',dishId:'d3',done:false}],templates:[{id:'t1',name:'Milch',qty:2,unit:'l',category:'Kühlware'},{id:'t2',name:'Haferflocken',qty:500,unit:'g',category:'Zutaten'},{id:'t3',name:'Bananen',qty:6,unit:'Stück',category:'Obst & Gemüse'},{id:'t4',name:'Eier',qty:10,unit:'Stück',category:'Kühlware'},{id:'t5',name:'Brot',qty:1,unit:'Stück',category:'Backwaren'}],weekly:null,manual:[],checked:[],history:[],pantry:[],shopOverrides:{},shopExcluded:[],staples:['Salz','Pfeffer','Öl']};
@@ -433,6 +445,38 @@ function initProductAutoComplete(root=document){
 const productAutoObserver=new MutationObserver(()=>initProductAutoComplete());
 productAutoObserver.observe(document.body,{childList:true,subtree:true});
 
+
+/* V44: Track the actual visible iPhone viewport when the keyboard opens. */
+function syncVisibleViewport(){
+ const viewport=window.visualViewport;
+ if(!viewport)return;
+ document.documentElement.style.setProperty('--fk-vh',viewport.height+'px');
+ document.documentElement.style.setProperty('--fk-vtop',viewport.offsetTop+'px');
+}
+if(window.visualViewport){
+ syncVisibleViewport();
+ window.visualViewport.addEventListener('resize',syncVisibleViewport,{passive:true});
+ window.visualViewport.addEventListener('scroll',syncVisibleViewport,{passive:true});
+}
+document.addEventListener('focusin',event=>{
+ const el=event.target;
+ if(!el.matches?.('input,textarea,select'))return;
+ // Do not jump on every keystroke: only make the newly focused field reachable.
+ setTimeout(()=>{
+  if(document.activeElement!==el)return;
+  const modalEl=el.closest('.modal');
+  if(modalEl)el.scrollIntoView({block:'nearest',behavior:'smooth'});
+ },240);
+});
+function showAppUpdateNotice(){
+ if(document.querySelector('.update-notice'))return;
+ const banner=document.createElement('div');banner.className='update-notice';
+ const message=document.createElement('span');message.textContent='Eine neue Version ist verfügbar.';
+ const action=document.createElement('button');action.type='button';action.textContent='Aktualisieren';
+ action.addEventListener('click',()=>location.reload());
+ banner.append(message,action);document.body.appendChild(banner);
+}
+
 // UI action methods are intentionally global for the standalone single-file demo.
-window.addEventListener('error',e=>console.error('Familienküche:',e.message));draw();loadPhotos();if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('./sw.js').catch(()=>{});
+window.addEventListener('error',e=>console.error('Familienküche:',e.message));draw();loadPhotos();if('serviceWorker' in navigator&&location.protocol.startsWith('http')){let hadController=!!navigator.serviceWorker.controller;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(hadController)showAppUpdateNotice();hadController=true});navigator.serviceWorker.register('./sw.js',{updateViaCache:'none'}).then(reg=>reg.update().catch(()=>{})).catch(()=>{});}
 </script></body></html>
