@@ -237,6 +237,8 @@ function saveUnifiedProduct(event,mode,encoded){event.preventDefault();const f=e
  if(!Number.isFinite(qty)||qty<0||!units.includes(unit)||!categories.includes(category)){alert('Bitte gültige Angaben eintragen.');return;}
  if(mode==='list'){
   const item=totals().find(x=>x.key===identity);if(!item)return;
+  const compatible=(a,b)=>a===b||(a==='g'&&b==='kg')||(a==='kg'&&b==='g')||(a==='ml'&&b==='l')||(a==='l'&&b==='ml');
+  if(!compatible(unit,item.unit)){alert('Für diesen Einkaufsartikel kann die Einheit nur zwischen g und kg bzw. ml und l gewechselt werden. Andere Einheiten bitte direkt am Ursprungsprodukt oder Rezept ändern.');return;}
   state.shopOverrides[identity]=Math.round(storedUnitQty(qty,unit,item.unit)*1000)/1000;
   state.shopUnitOverrides[identity]=unit;
   state.productCategories[nameKey(item.name)]=category;
@@ -310,6 +312,7 @@ function startNewShopping(){
  state.weekly=[...state.templates.map(x=>({...clone(x),source:'standard',templateId:x.id,enabled:true})),...remainingWeeklyExtras];
  state.checked=[];
  state.shopOverrides={};
+ state.shopUnitOverrides={};
  state.shopExcluded=[];
  shopShowDone=false;
  save();draw();
@@ -324,7 +327,7 @@ function editTemplate(tid){let t=state.templates.find(x=>x.id===tid);showModal(`
 function previousProducts(){const all=[...state.manual,...state.templates,...(state.weekly||[])];const seen=new Set();return all.slice().reverse().filter(x=>{const k=nameKey(x.name);if(!k||seen.has(k))return false;seen.add(k);return true}).slice(0,10)}
 function pickRecentProduct(enc){const name=decodeURIComponent(enc),f=document.querySelector('.modal form'),item=previousProducts().find(x=>nameKey(x.name)===nameKey(name));if(!f||!item)return;f.elements.name.value=item.name;if(f.elements.qty)f.elements.qty.value=item.qty;if(f.elements.unit)f.elements.unit.value=item.unit;if(f.elements.category)f.elements.category.value=item.category}
 function openExtra(){showModal(`<h2>Einzelprodukt hinzufügen</h2><p class="muted small">Nur für diese Einkaufsliste, nicht für die Standardvorlage.</p><div class="recent-products">${previousProducts().map(x=>`<button type="button" onclick="pickRecentProduct('${encodeURIComponent(x.name)}')">${safe(x.name)}</button>`).join('')}</div><form onsubmit="submitExtra(event)"><label>Produktname</label><input name="name" required><div class="form-cols"><div><label>Menge</label><input name="qty" type="number" min="0" step="any" value="1" required></div><div><label>Einheit</label><select name="unit">${units.map(u=>`<option>${u}</option>`).join('')}</select></div></div><label>Supermarktbereich</label><select name="category">${categories.map(c=>`<option>${c}</option>`).join('')}</select><button class="btn wide" type="submit" style="margin-top:18px">Zur Einkaufsliste hinzufügen</button></form>`)}
-function submitExtra(e){e.preventDefault();const before=shopQuantities();let f=e.target;state.manual.push({id:id(),name:f.elements.name.value.trim(),qty:Number(f.elements.qty.value),unit:f.elements.unit.value,category:f.elements.category.value});reopenIncreasedItems(before);save();closeModal()}
+function submitExtra(e){e.preventDefault();const before=shopQuantities();let f=e.target;const name=f.elements.name.value.trim(),qty=Number(f.elements.qty.value);if(!name||!Number.isFinite(qty)||qty<0){alert('Bitte einen Produktnamen und eine gültige Menge eingeben.');return;}state.manual.push({id:id(),name,qty,unit:f.elements.unit.value,category:f.elements.category.value});reopenIncreasedItems(before);save();closeModal()}
 async function exportData(){const backup=clone(state);for(const d of backup.dishes){if(d.photoRef){d.photo=photoCache.get(d.id)||await photoRead(d.photoRef)||'';delete d.photoRef}}const blob=new Blob([JSON.stringify(backup,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='familienkueche-sicherung.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}function importData(input){const f=input.files[0];if(!f)return;const reader=new FileReader();reader.onload=()=>{try{const data=JSON.parse(reader.result);if(!Array.isArray(data.dishes)||!Array.isArray(data.plan)||!Array.isArray(data.templates))throw Error('Ungültige Sicherungsdatei');if(confirm('Alle aktuellen Daten mit dieser Sicherung ersetzen?')){state=migrateProductCategories({...clone(demo),...data});photoCache.clear();save();draw();loadPhotos()}}catch(e){alert('Import fehlgeschlagen: '+e.message)}};reader.readAsText(f)}function resetAll(){if(!confirm('Alle lokalen Änderungen löschen und Beispieldaten wiederherstellen?'))return;state=clone(demo);photoCache.clear();save();draw()}
 
 const COMMON_PRODUCT_WORDS=['Paprika','Tomaten','Zucchini','Kartoffeln','Karotten','Zwiebeln','Knoblauch','Bananen','Äpfel','Gurken','Salat','Brokkoli','Champignons','Reis','Nudeln','Spaghetti','Lasagneplatten','Milch','Hafermilch','Joghurt','Käse','Butter','Eier','Sahne','Mehl','Zucker','Haferflocken','Kokosmilch','Passierte Tomaten','Olivenöl','Sonnenblumenöl','Brot','Brötchen','Toastbrot','Wasser','Apfelsaft','Kaffee','Tee','Salz','Pfeffer'];
